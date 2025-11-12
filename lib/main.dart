@@ -1,12 +1,25 @@
-
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:camera/camera.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/camera_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/login_screen.dart';
+import 'services/auth_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Optional: You can preload cameras if needed later
+  try {
+    if (!Platform.isMacOS) {
+      await availableCameras();
+    }
+  } catch (e) {
+    debugPrint("⚠️ Camera initialization skipped or failed: $e");
+  }
+
   runApp(const SmartMirrorApp());
 }
 
@@ -25,7 +38,18 @@ class SmartMirrorApp extends StatelessWidget {
           bodySmall: TextStyle(color: Colors.white),
         ),
       ),
-      home: const MainShell(),
+      home: FutureBuilder<bool>(
+        future: AuthService().isLoggedIn(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Scaffold(
+              backgroundColor: Colors.black,
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return snapshot.data! ? const MainShell() : const LoginScreen();
+        },
+      ),
     );
   }
 }
@@ -39,6 +63,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
+
   static const List<Widget> _pages = <Widget>[
     HomeScreen(),
     ProfileScreen(),
@@ -47,9 +72,7 @@ class _MainShellState extends State<MainShell> {
   ];
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
   }
 
   @override

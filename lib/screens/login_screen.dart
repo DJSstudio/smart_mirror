@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/user_storage.dart';
-import 'profile_screen.dart';
+import '../services/auth_service.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,62 +10,78 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _controller = TextEditingController();
+  final TextEditingController _userCtrl = TextEditingController();
+  final TextEditingController _passCtrl = TextEditingController();
+  final AuthService _auth = AuthService();
+
+  bool _loading = false;
+  String? _error;
+
+  void _doLogin() async {
+    setState(() { _loading = true; _error = null; });
+
+    final ok = await _auth.login(_userCtrl.text.trim(), _passCtrl.text.trim());
+
+    setState(() => _loading = false);
+
+    if (ok) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    } else {
+      setState(() => _error = "Invalid username or password.");
+    }
+  }
+
+  void _doRegister() async {
+    setState(() { _loading = true; _error = null; });
+
+    final ok = await _auth.register(_userCtrl.text.trim(), _passCtrl.text.trim());
+
+    setState(() => _loading = false);
+
+    if (ok) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    } else {
+      setState(() => _error = "Registration failed. Username may already exist.");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Mirror background
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                "Welcome",
-                style: TextStyle(
-                  fontSize: 50,
-                  fontWeight: FontWeight.w300,
-                  color: Colors.white70,
-                ),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('Login or Register', style: TextStyle(fontSize: 22)),
+            TextField(controller: _userCtrl, decoration: const InputDecoration(labelText: 'Username')),
+            const SizedBox(height: 8),
+            TextField(controller: _passCtrl, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
+
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(_error!, style: const TextStyle(color: Colors.red)),
               ),
 
-              const SizedBox(height: 30),
-
-              TextField(
-                controller: _controller,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 26, color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: "Enter your name",
-                  hintStyle: TextStyle(color: Colors.white38),
-                  border: InputBorder.none, // No box around text
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              GestureDetector(
-                onTap: () async {
-                  if (_controller.text.trim().isEmpty) return;
-                  await UserStorage.saveUsername(_controller.text.trim());
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                  );
-                },
-                child: const Text(
-                  "CONTINUE",
-                  style: TextStyle(
-                    fontSize: 22,
-                    color: Colors.white70,
-                    letterSpacing: 4,
-                  ),
-                ),
-              )
-            ],
-          ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _loading ? null : _doLogin,
+              child: _loading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Login'),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: _loading ? null : _doRegister,
+              child: const Text('Register'),
+            ),
+          ]),
         ),
       ),
     );
