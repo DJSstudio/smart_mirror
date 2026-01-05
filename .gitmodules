@@ -1,0 +1,6 @@
+[submodule "smart_mirror_backend_2"]
+	path = smart_mirror_backend_2
+	url = https://github.com/DJSstudio/smart_mirror_backend_2
+[submodule "smart_mirror_frontend_2"]
+	path = smart_mirror_frontend_2
+	url = https://github.com/DJSstudio/smart_mirror_frontend_2
